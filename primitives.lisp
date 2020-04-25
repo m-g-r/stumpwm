@@ -771,10 +771,10 @@ positive direction."
             min))))
 
 (defun split-seq (seq separators &key test default-value)
-  "split a sequence into sub sequences given the list of seperators."
+  "Split a sequence into subsequences given the list of seperators."
   (let ((seps separators))
     (labels ((sep (c)
-               (find c seps :test test)))
+               (position c seps :test test)))
       (or (loop for i = (position-if (complement #'sep) seq)
                 then (position-if (complement #'sep) seq :start j)
                 as j = (position-if #'sep seq :start (or i 0))
@@ -834,7 +834,7 @@ output directly to a file.")
 (defun dformat (level fmt &rest args)
   (when (>= *debug-level* level)
     (multiple-value-bind (sec m h) (get-decoded-system-time)
-      (format *debug-stream* "~2,'0d:~2,'0d:~2,'0d " h m sec))
+      (format *debug-stream* "~2,'0d:~2,'0d:~2,'0d ~2,' d " h m sec level))
     ;; strip out non base-char chars quick-n-dirty like
     (write-string (map 'string (lambda (ch)
                                  (if (typep ch 'standard-char)
@@ -999,10 +999,10 @@ generally set when killing text in the input bar.")
 recommended this is assigned using LET.")
 
 (defvar *suppress-echo-timeout* nil
-  "Assign this T and messages will not time out. It is recommended this is assigned using LET.")
+  "Assign this T and messages will not time out. It is recommended to assign this using LET.")
 
 (defvar *ignore-echo-timeout* nil
-  "Assign this T and the message time out won't be touched. It is recommended this is assigned using LET.")
+  "Assign this T and the message time out won't be touched. It is recommended to assign this using LET.")
 
 (defvar *run-or-raise-all-groups* t
   "When this is @code{T} the @code{run-or-raise} function searches all groups for a
