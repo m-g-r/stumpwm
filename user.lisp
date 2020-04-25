@@ -158,16 +158,30 @@ with base. Automagically update the cache."
                                 :end2 (length base)))) 
                  (path-cache-programs *path-cache*)))
 
-(defcommand run-shell-command (cmd &optional collect-output-p) ((:shell "/bin/sh -c "))
+(defcommand run-shell-command (cmd &optional collect-output-p (timeout 30)) ((:shell "/bin/sh -c "))
   "Run the specified shell command. If @var{collect-output-p} is @code{T}
-then run the command synchonously and collect the output. Be
-careful. If the shell command doesn't return, it will hang StumpWM. In
-such a case, kill the shell command to resume StumpWM."
+then run the command synchonously with a timeout and collect the output.
+After TIMEOUT seconds it stops waiting and a condition of type SB-EXT:TIMEOUT
+is signaled. The command itself will continue to run until it is finished.
+Be careful, the shell command will hang StumpWM until it returns or timeouts."
   (if collect-output-p
-      (run-prog-collect-output *shell-program* "-c" cmd)
+      (sb-ext:with-timeout timeout
+        (run-prog-collect-output *shell-program* "-c" cmd))
       (run-prog *shell-program* :args (list "-c" cmd) :wait nil)))
 
+(defcommand run-shell-command-and-show-output (cmd &optional (timeout 5)) ((:shell "/bin/sh -c "))
+  "Call RUN-SHELL-COMMAND, collect the output and show as message.
+After TIMEOUT seconds we stop waiting for the output and show a warning.
+Even then, CMD will continue to run until it is finished."
+  (handler-case
+      (sb-ext:with-timeout timeout
+        (message (run-shell-command cmd t)))
+    (sb-ext:timeout (e)
+      (message (format nil "~e Command \"~a\" did not finish within ~s seconds.~%Warning: The programm was not stopped by this timeout. It might still be running." e cmd timeout)))))
+
 (defcommand-alias exec run-shell-command)
+
+(defcommand-alias exec&show run-shell-command-and-show-output)
 
 (defcommand eval-line (cmd) ((:rest "Eval: "))
   "Evaluate the s-expression and display the result(s)."
