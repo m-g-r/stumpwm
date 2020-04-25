@@ -167,9 +167,15 @@ such a case, kill the shell command to resume StumpWM."
       (run-prog-collect-output *shell-program* "-c" cmd)
       (run-prog *shell-program* :args (list "-c" cmd) :wait nil)))
 
-(defcommand run-shell-command-and-show-output (cmd) ((:shell "/bin/sh -c "))
-  "Call run-shell-command, collect the output and show as message"
-  (message (run-shell-command cmd t)))
+(defcommand run-shell-command-and-show-output (cmd &optional (timeout 5)) ((:shell "/bin/sh -c "))
+  "Call RUN-SHELL-COMMAND, collect the output and show as message.
+After TIMEOUT seconds we stop waiting for the output and show a warning.
+Even then, CMD will continue to run until it is finished."
+  (handler-case
+      (sb-ext:with-timeout timeout
+        (message (run-shell-command cmd t)))
+    (sb-ext:timeout (e)
+      (message (format nil "~e Command \"~a\" did not finish within ~s seconds.~%Warning: The programm was not stopped by this timeout. It might still be running." e cmd timeout)))))
 
 (defcommand-alias exec run-shell-command)
 
