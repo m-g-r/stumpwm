@@ -133,10 +133,13 @@
 
 (defmethod group-lost-focus ((group tile-group))
   ;; If this window had the focus, try to avoid losing it.
-  (when-let ((frame (tile-group-current-frame group)))
-    (setf (frame-window frame)
-          (first (remove-if 'window-hidden-p (frame-windows group frame))))
-    (focus-frame group frame)))
+  (let ((frame (tile-group-current-frame group)))
+    (if frame
+        (progn
+          (setf (frame-window frame)
+                (first (remove-if 'window-hidden-p (frame-windows group frame))))
+          (focus-frame group frame))
+        (dformat 4 "missing slot CURRENT-FRAME in GROUP-LOST-FOCUS for GROUP: ~s~%" (group-name group)))))
 
 (defmethod group-indicate-focus ((group tile-group))
   (show-frame-indicator group))
