@@ -158,16 +158,36 @@ with base. Automagically update the cache."
                                 :end2 (length base)))) 
                  (path-cache-programs *path-cache*)))
 
+(define-condition shell-timeout (error)
+  ((command :initarg :command :initform nil)
+   (seconds :initarg :seconds :initform nil)
+   (parent-report :initarg :parent-report :initform nil))
+  (:report (lambda (condition stream)
+             (with-slots (command seconds parent-report)
+                 condition
+               (format stream "~@[~a~]~&Command~@[ \"~a\"~] did not finish~@[ within ~a second~:p~].~%Warning: The command was not stopped by this timeout. It might still be running.~%"
+                       parent-report
+                       command
+                       seconds))))
+  (:documentation
+   "Signaled when a shell command does not complete within an allotted time budget."))
+
 (defcommand run-shell-command (cmd &optional collect-output-p (timeout 30)) ((:shell "/bin/sh -c "))
   "Run the specified shell command. If @var{collect-output-p} is @code{T}
 then run the command synchonously with a timeout and collect the output.
-After TIMEOUT seconds it stops waiting and an error is signaled.
-The command itself will continue to run until it is finished."
+After TIMEOUT seconds it stops waiting and an error of type SHELL-TIMEOUT
+is signaled. The command itself will continue to run until it is finished."
   (if collect-output-p
       (handler-bind ((sb-ext:timeout
                       (lambda (condition)
-                        (error (format nil "~e~%Command \"~a\" did not finish within ~s seconds.~%Warning: The command was not stopped by this timeout. It might still be running.~%"
-                                       condition cmd timeout)))))
+                        ;; translate SB-EXT:TIMEOUT which is just a SERIOUS-CONDITION
+                        ;; to our SHELL-TIME which is an ERROR, as we consider it an
+                        ;; error when we are waiting for a response but do not get it
+                        ;; within the allotted time.
+                        (error 'shell-timeout
+                               :parent-report condition
+                               :command cmd
+                               :seconds timeout))))
         (sb-ext:with-timeout timeout
           (run-prog-collect-output *shell-program* "-c" cmd)))
       (run-prog *shell-program* :args (list "-c" cmd) :wait nil)))
