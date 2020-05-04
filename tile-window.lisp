@@ -284,8 +284,16 @@ frame."
 
 (defun other-hidden-window (group)
   "Return the last window that was accessed and that is hidden."
-  (let ((wins (remove-if (lambda (w) (when-let ((frame (window-frame w))) ;; a window might not a frame when switching between monitors
-                                       (eq (frame-window (window-frame w)) w)))
+  (let ((wins (remove-if (lambda (window)
+                           (let ((frame (window-frame window)))
+                             ;; a window might not have a frame when switching between monitors
+                             (if frame
+                                 (eq (frame-window frame) window)
+                                 (progn
+                                   (dformat 4 "missing slot FRAME in OTHER-HIDDEN-WINDOW for WINDOW: ~s~%" (window-title window))
+                                   ;; return nil here, as this window is probably from a lost head and
+                                   ;; can be returned as a candidate window by OTHZER-HIDDEN-WINDOW
+                                   nil))))
                          (only-tile-windows (group-windows group)))))
     (first wins)))
 
