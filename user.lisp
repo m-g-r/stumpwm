@@ -161,23 +161,21 @@ with base. Automagically update the cache."
 (defcommand run-shell-command (cmd &optional collect-output-p (timeout 30)) ((:shell "/bin/sh -c "))
   "Run the specified shell command. If @var{collect-output-p} is @code{T}
 then run the command synchonously with a timeout and collect the output.
-After TIMEOUT seconds it stops waiting and a condition of type SB-EXT:TIMEOUT
-is signaled. The command itself will continue to run until it is finished.
-Be careful, the shell command will hang StumpWM until it returns or timeouts."
+After TIMEOUT seconds it stops waiting and an error is signaled.
+The command itself will continue to run until it is finished."
   (if collect-output-p
-      (sb-ext:with-timeout timeout
-        (run-prog-collect-output *shell-program* "-c" cmd))
+      (handler-bind ((sb-ext:timeout
+                      (lambda (condition)
+                        (error (format nil "~e~%Command \"~a\" did not finish within ~s seconds.~%Warning: The command was not stopped by this timeout. It might still be running.~%"
+                                       condition cmd timeout)))))
+        (sb-ext:with-timeout timeout
+          (run-prog-collect-output *shell-program* "-c" cmd)))
       (run-prog *shell-program* :args (list "-c" cmd) :wait nil)))
 
 (defcommand run-shell-command-and-show-output (cmd &optional (timeout 5)) ((:shell "/bin/sh -c "))
-  "Call RUN-SHELL-COMMAND, collect the output and show as message.
-After TIMEOUT seconds we stop waiting for the output and show a warning.
-Even then, CMD will continue to run until it is finished."
-  (handler-case
-      (sb-ext:with-timeout timeout
-        (message (run-shell-command cmd t)))
-    (sb-ext:timeout (e)
-      (message (format nil "~e Command \"~a\" did not finish within ~s seconds.~%Warning: The programm was not stopped by this timeout. It might still be running." e cmd timeout)))))
+  "Call RUN-SHELL-COMMAND with timeout TIMEOUT, collect the output,
+and show as message."
+  (message (run-shell-command cmd t timeout)))
 
 (defcommand-alias exec run-shell-command)
 
