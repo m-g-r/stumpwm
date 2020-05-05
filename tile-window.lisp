@@ -15,7 +15,9 @@ like xterm and emacs.")
 (defmethod window-frame :before ((window tile-window))
   (unless (slot-value window 'frame)
     (setf (slot-value window 'frame) (first (tile-group-frame-tree (window-group window))))
-    (dformat 4 "fixing slot FRAME when accessing it in WINDOW: ~s~%" (window-title window))))
+    (dformat 4 "fixing slot FRAME when accessing it in WINDOW: ~s with value: ~s~%"
+             (window-title window)
+             (first (tile-group-frame-tree (window-group window))))))
 
 (defmethod update-decoration ((window tile-window))
   ;; give it a colored border but only if there are more than 1 frames.
