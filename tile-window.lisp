@@ -294,7 +294,7 @@ frame."
                                  (progn
                                    (dformat 4 "missing slot FRAME in OTHER-HIDDEN-WINDOW for WINDOW: ~s~%" (window-title window))
                                    ;; return nil here, as this window is probably from a lost head and
-                                   ;; can be returned as a candidate window by OTHZER-HIDDEN-WINDOW
+                                   ;; can be returned as a candidate window by OTHER-HIDDEN-WINDOW
                                    nil))))
                          (only-tile-windows (group-windows group)))))
     (first wins)))
