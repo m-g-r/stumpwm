@@ -33,8 +33,10 @@
 
 (defmethod tile-group-current-frame :before ((group tile-group))
   (unless (slot-value group 'current-frame)
-    (setf (slot-value group 'current-frame) (first (tile-group-frame-tree group)))
-    (dformat 4 "fixing slot current-frame when accessing it in group: ~s~%" (group-name group))))
+    (setf (slot-value group 'current-frame) (first (tile-group-frame-tree group)) )
+    (dformat 4 "fixing slot CURRENT-FRAME when accessing it in GROUP: ~s with value: ~s~%"
+             (group-name group)
+             (first (tile-group-frame-tree group)))))
 
 (defmethod initialize-instance :after ((group tile-group) &key &allow-other-keys)
   (let* ((heads (copy-heads (group-screen group))))
